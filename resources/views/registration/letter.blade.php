@@ -14,8 +14,12 @@
                 <ul>
                     <li><strong>Nama:</strong> {{ $student->nama_lengkap }}</li>
                     <li><strong>Nomor Peserta Didik:</strong> {{ $student->nomor_peserta_didik }}</li>
-                    <li><strong>Tanggal Daftar:</strong> {{ $student->tanggal_daftar->format('d F Y') }}</li>
-                    <li><strong>Status:</strong> {{ $student->status_pendaftaran }}</li>
+                    @if($student->nis)
+                        <li><strong>Nomor Induk Siswa (NIS):</strong> <span class="badge bg-success font-monospace fs-6">{{ $student->nis }}</span></li>
+                    @endif
+                    <li><strong>Tanggal Daftar:</strong> {{ $student->tanggal_daftar ? $student->tanggal_daftar->format('d F Y') : '-' }}</li>
+                    <li><strong>Status Pendaftaran:</strong> {{ $student->status_pendaftaran }}</li>
+                    <li><strong>Status Pembayaran:</strong> {{ $student->status_pembayaran ?? 'Belum Bayar' }}</li>
                 </ul>
                 <p>Silahkan cetak halaman ini sebagai bukti pendaftaran. Hubungi pihak sekolah jika ada pertanyaan lebih lanjut.</p>
                 <div class="d-grid gap-2 mt-4">

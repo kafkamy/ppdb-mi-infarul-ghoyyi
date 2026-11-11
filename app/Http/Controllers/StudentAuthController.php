@@ -232,6 +232,72 @@ class StudentAuthController extends Controller
     }
 
     /**
+     * Tampilkan halaman pembayaran & upload bukti pembayaran.
+     */
+    public function showPembayaran()
+    {
+        $student = Auth::guard('student')->user();
+        $schoolSetting = SchoolSetting::get();
+
+        return view('pembayaran', compact('student', 'schoolSetting'));
+    }
+
+    /**
+     * Tangani upload bukti pembayaran oleh calon peserta didik.
+     */
+    public function uploadPembayaran(Request $request)
+    {
+        $student = Auth::guard('student')->user();
+        $schoolSetting = SchoolSetting::get();
+
+        $request->validate([
+            'bukti_pembayaran' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'nama_pengirim_pembayaran' => ['nullable', 'string', 'max:255'],
+            'bank_tujuan_pembayaran' => ['nullable', 'string', 'max:255'],
+            'jumlah_pembayaran' => ['nullable', 'numeric', 'min:0'],
+            'tanggal_pembayaran' => ['nullable', 'date'],
+            'catatan_pembayaran' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'bukti_pembayaran.required' => 'File bukti pembayaran wajib diunggah.',
+            'bukti_pembayaran.mimes' => 'Format bukti pembayaran harus berupa JPG, PNG, atau PDF.',
+            'bukti_pembayaran.max' => 'Ukuran file bukti pembayaran maksimal 5MB.',
+        ]);
+
+        try {
+            if ($request->hasFile('bukti_pembayaran')) {
+                // Hapus bukti lama jika ada
+                if ($student->bukti_pembayaran && \Illuminate\Support\Facades\Storage::disk('public')->exists($student->bukti_pembayaran)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($student->bukti_pembayaran);
+                }
+
+                $file = $request->file('bukti_pembayaran');
+                $fileName = 'bukti_' . $student->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $filePath = $file->storeAs('payments', $fileName, 'public');
+
+                $student->update([
+                    'bukti_pembayaran' => $filePath,
+                    'status_pembayaran' => 'Menunggu Verifikasi',
+                    'tanggal_pembayaran' => $request->tanggal_pembayaran ? $request->tanggal_pembayaran : now(),
+                    'nama_pengirim_pembayaran' => $request->nama_pengirim_pembayaran,
+                    'bank_tujuan_pembayaran' => $request->bank_tujuan_pembayaran ?? 'Bank Syariah Indonesia (BSI)',
+                    'jumlah_pembayaran' => $request->jumlah_pembayaran ?? ($schoolSetting->biaya_pendaftaran ?? 1550000),
+                    'catatan_pembayaran' => $request->catatan_pembayaran,
+                    'catatan_verifikasi_pembayaran' => null, // Reset catatan verifikasi jika diunggah ulang
+                    'tanggal_verifikasi_pembayaran' => null,
+                ]);
+
+                return redirect()->route('pembayaran')
+                    ->with('success', 'Bukti pembayaran berhasil diunggah! Panitia PPDB akan segera memverifikasi data pembayaran Anda.');
+            }
+
+            return back()->with('error', 'Gagal mengunggah bukti pembayaran.');
+        } catch (\Exception $e) {
+            Log::error('Upload Bukti Pembayaran Error: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan saat mengunggah bukti pembayaran: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
      * Tangani proses logout siswa.
      */
     public function logout(Request $request)

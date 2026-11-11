@@ -13,6 +13,40 @@
     </a>
 </div>
 
+@if($pendaftarPending > 0)
+    <div class="alert alert-info border-0 shadow-sm mb-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between p-3 rounded-4 animate-fade-in">
+        <div class="d-flex align-items-center mb-2 mb-md-0">
+            <div class="bg-primary text-white p-2 rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-person-check-fill fs-5"></i>
+            </div>
+            <div>
+                <strong class="text-dark">Verifikasi Data Calon Siswa Diperlukan!</strong>
+                <div class="text-muted small">Ada <strong>{{ $pendaftarPending }}</strong> calon siswa baru yang formulir &amp; dokumennya menunggu verifikasi panitia.</div>
+            </div>
+        </div>
+        <a href="{{ route('admin.verifikasi-data', ['status' => 'Pending']) }}" class="btn btn-sm btn-primary text-white fw-bold rounded-pill px-4 py-2">
+            Verifikasi Data Siswa →
+        </a>
+    </div>
+@endif
+
+@if($pembayaranPending > 0)
+    <div class="alert alert-warning border-0 shadow-sm mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between p-3 rounded-4 animate-fade-in">
+        <div class="d-flex align-items-center mb-2 mb-md-0">
+            <div class="bg-warning text-dark p-2 rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-credit-card-fill fs-5"></i>
+            </div>
+            <div>
+                <strong class="text-dark">Verifikasi Bukti Pembayaran Diperlukan!</strong>
+                <div class="text-muted small">Ada <strong>{{ $pembayaranPending }}</strong> bukti transfer pembayaran siswa yang menunggu pemeriksaan dan persetujuan.</div>
+            </div>
+        </div>
+        <a href="{{ route('admin.verifikasi-pembayaran', ['status_pembayaran' => 'Menunggu Verifikasi']) }}" class="btn btn-sm btn-warning text-dark fw-bold rounded-pill px-4 py-2">
+            Periksa Pembayaran Sekarang →
+        </a>
+    </div>
+@endif
+
 <div class="row mb-5 g-4">
     <div class="col-lg-3 col-md-6 animate-fade-in" style="animation-delay: 0.1s;">
         <div class="card card-hover border-0 h-100 bg-primary text-white" style="background: linear-gradient(135deg, var(--primary), #6366f1) !important;">
@@ -131,14 +165,27 @@
                         <i class="bi bi-chevron-right text-muted"></i>
                     </a>
                     
-                    <a href="{{ route('admin.students.index', ['status' => 'Pending']) }}" class="btn btn-light border p-3 d-flex align-items-center justify-content-between text-start card-hover rounded-4">
+                    <a href="{{ route('admin.verifikasi-data') }}" class="btn btn-light border p-3 d-flex align-items-center justify-content-between text-start card-hover rounded-4 border-info">
                         <div class="d-flex align-items-center">
-                            <div class="bg-warning bg-opacity-10 text-warning rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                <i class="bi bi-hourglass-split fs-5"></i>
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                <i class="bi bi-person-check-fill fs-5"></i>
                             </div>
                             <div>
-                                <div class="fw-bold text-dark mb-1">Menunggu Verifikasi <span class="badge bg-warning text-dark ms-1">{{ $pendaftarPending }}</span></div>
-                                <div class="text-muted small">Proses verifikasi dokumen pendaftar</div>
+                                <div class="fw-bold text-dark mb-1">Verifikasi Data Calon Siswa <span class="badge bg-warning text-dark ms-1">{{ $pendaftarPending }}</span></div>
+                                <div class="text-muted small">Pemeriksaan identitas &amp; dokumen pendaftar</div>
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{{ route('admin.verifikasi-pembayaran') }}" class="btn btn-light border p-3 d-flex align-items-center justify-content-between text-start card-hover rounded-4 border-warning">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning bg-opacity-25 text-dark rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                <i class="bi bi-credit-card-2-front-fill fs-5 text-warning"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark mb-1">Verifikasi Bukti Pembayaran <span class="badge bg-warning text-dark ms-1">{{ $pembayaranPending }}</span></div>
+                                <div class="text-muted small">Periksa &amp; validasi bukti transfer siswa</div>
                             </div>
                         </div>
                         <i class="bi bi-chevron-right text-muted"></i>

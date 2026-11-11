@@ -64,6 +64,7 @@
     $step1Done = true;
     $step2Done = $isCompleted;
     $step3Done = $student->status_pendaftaran === 'Diterima';
+    $step4Done = $student->isPembayaranLunas();
 @endphp
 
 {{-- ── HEADER SELAMAT DATANG ── --}}
@@ -82,6 +83,9 @@
                     <i class="bi bi-envelope-fill me-1"></i>{{ $student->email }}
                     @if($student->nomor_peserta_didik)
                         &nbsp;·&nbsp;<i class="bi bi-card-list me-1"></i>No. <strong>{{ $student->nomor_peserta_didik }}</strong>
+                    @endif
+                    @if($student->nis)
+                        &nbsp;·&nbsp;<span class="badge bg-white text-success fw-bold px-2 py-1"><i class="bi bi-person-badge-fill me-1"></i>NIS: {{ $student->nis }}</span>
                     @endif
                 </p>
             </div>
@@ -135,11 +139,18 @@
                             </span>
                         </div>
                         @if($student->status_pendaftaran === 'Pending')
-                            <p class="text-muted small mb-3">Data Anda sedang diverifikasi oleh panitia PPDB. Harap menunggu.</p>
+                            <p class="text-muted small mb-3">Data formulir Anda sedang diverifikasi oleh panitia PPDB. Harap menunggu.</p>
                         @elseif($student->status_pendaftaran === 'Diterima')
-                            <p class="text-muted small mb-3">Selamat! Anda <strong class="text-success">DITERIMA</strong>. Lakukan daftar ulang sesuai jadwal.</p>
+                            <p class="text-muted small mb-3">Selamat! Data pendaftaran Anda <strong class="text-success">DITERIMA</strong>. Silakan lakukan pembayaran daftar ulang.</p>
                         @else
-                            <p class="text-muted small mb-3">Mohon maaf, berkas belum memenuhi syarat. Hubungi admin sekolah.</p>
+                            <p class="text-muted small mb-3">Mohon maaf, berkas belum memenuhi syarat.</p>
+                        @endif
+
+                        @if($student->catatan_verifikasi_pendaftaran)
+                            <div class="alert alert-{{ $student->status_pendaftaran === 'Ditolak' ? 'danger' : 'info' }} p-2 small mb-3 text-start">
+                                <strong><i class="bi bi-chat-left-dots-fill me-1"></i>Catatan Verifikasi Data:</strong>
+                                <div>{{ $student->catatan_verifikasi_pendaftaran }}</div>
+                            </div>
                         @endif
                         <a href="{{ route('siswa.formulir') }}" class="btn btn-outline-primary rounded-pill w-100 fw-semibold">
                             <i class="bi bi-eye me-1"></i> Lihat / Edit Formulir
@@ -186,23 +197,50 @@
                             <div class="step-circle {{ $step3Done ? 'done' : 'todo' }}">
                                 @if($step3Done)<i class="bi bi-check2"></i>@else 3 @endif
                             </div>
-                            <div class="step-connector todo"></div>
+                            <div class="step-connector {{ $step4Done ? 'done' : 'todo' }}"></div>
                         </div>
                         <div class="step-text">
-                            <h6 class="{{ $step3Done ? 'text-success' : 'text-muted' }}">
-                                Verifikasi Panitia
+                            <h6 class="{{ $step3Done ? 'text-success' : ($student->status_pendaftaran === 'Pending' ? 'text-warning' : 'text-danger') }}">
+                                Verifikasi Data Siswa @if($step3Done)<i class="bi bi-check-circle-fill text-success" style="font-size:.8rem;"></i>@endif
                             </h6>
-                            <p>Status diterima / ditolak</p>
+                            <p>
+                                @if($student->status_pendaftaran === 'Diterima')
+                                    <span class="text-success fw-semibold">Data Diterima</span>
+                                @elseif($student->status_pendaftaran === 'Ditolak')
+                                    <span class="text-danger fw-semibold">Data Ditolak</span>
+                                @else
+                                    <span class="text-warning">Menunggu Verifikasi Data</span>
+                                @endif
+                            </p>
                         </div>
                     </div>
                     {{-- Step 4 --}}
                     <div class="step-row">
                         <div class="step-col">
-                            <div class="step-circle todo">4</div>
+                            <div class="step-circle {{ $step4Done ? 'done' : ($student->isPembayaranMenunggu() ? 'active' : 'todo') }}">
+                                @if($step4Done)<i class="bi bi-check2"></i>@else 4 @endif
+                            </div>
                         </div>
                         <div class="step-text" style="padding-bottom:0;">
-                            <h6 class="text-muted">Daftar Ulang</h6>
-                            <p>Pembayaran &amp; daftar ulang</p>
+                            <a href="{{ route('pembayaran') }}" class="text-decoration-none">
+                                <h6 class="{{ $step4Done ? 'text-success' : ($student->isPembayaranMenunggu() ? 'text-warning' : 'text-muted') }}">
+                                    Daftar Ulang &amp; Pembayaran @if($step4Done)<i class="bi bi-check-circle-fill text-success" style="font-size:.8rem;"></i>@endif
+                                </h6>
+                                <p class="mb-0">
+                                    @if($step4Done)
+                                        <span class="text-success fw-semibold">Lunas &amp; Terverifikasi</span>
+                                        @if($student->nis)
+                                            <br><small class="text-dark fw-bold font-monospace bg-light border px-2 py-0 rounded">NIS: {{ $student->nis }}</small>
+                                        @endif
+                                    @elseif($student->isPembayaranMenunggu())
+                                        <span class="text-warning fw-semibold">Menunggu Verifikasi</span>
+                                    @elseif($student->isPembayaranDitolak())
+                                        <span class="text-danger fw-semibold">Bukti Ditolak (Upload Ulang)</span>
+                                    @else
+                                        Upload Bukti Pembayaran →
+                                    @endif
+                                </p>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -225,15 +263,28 @@
                 </div>
             </div>
             <div class="col-sm-4">
-                <div class="card stat-card animate-fade-in" style="animation-delay:.25s;">
-                    <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-cash-coin"></i></div>
-                    <div>
-                        <div class="text-muted fw-semibold" style="font-size:.75rem;">Biaya Pendaftaran</div>
-                        <div class="fw-bold" style="font-size:1rem;">
-                            {{ $student->biaya_pendaftaran ? 'Rp '.number_format($student->biaya_pendaftaran, 0, ',', '.') : '—' }}
+                <a href="{{ route('pembayaran') }}" class="text-decoration-none text-dark">
+                    <div class="card stat-card animate-fade-in" style="animation-delay:.25s;">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-cash-coin"></i></div>
+                        <div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="text-muted fw-semibold" style="font-size:.75rem;">Pembayaran</span>
+                                @if($step4Done)
+                                    <span class="badge bg-success" style="font-size: 0.65rem;">Lunas</span>
+                                @elseif($student->isPembayaranMenunggu())
+                                    <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">Menunggu</span>
+                                @elseif($student->isPembayaranDitolak())
+                                    <span class="badge bg-danger" style="font-size: 0.65rem;">Ditolak</span>
+                                @else
+                                    <span class="badge bg-secondary" style="font-size: 0.65rem;">Belum</span>
+                                @endif
+                            </div>
+                            <div class="fw-bold" style="font-size:1rem;">
+                                {{ $student->biaya_pendaftaran ? 'Rp '.number_format($student->biaya_pendaftaran, 0, ',', '.') : 'Rp 1.550.000' }}
+                            </div>
                         </div>
                     </div>
-                </div>
+                </a>
             </div>
             <div class="col-sm-4">
                 <div class="card stat-card animate-fade-in" style="animation-delay:.3s;">
@@ -269,6 +320,16 @@
                             <tr>
                                 <td class="text-muted py-1" width="35%">Nama Lengkap</td>
                                 <td class="fw-semibold py-1">{{ $student->nama_lengkap }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted py-1">Nomor Induk Siswa (NIS)</td>
+                                <td class="py-1">
+                                    @if($student->nis)
+                                        <span class="badge bg-success font-monospace px-3 py-1 fs-6"><i class="bi bi-person-badge-fill me-1"></i>{{ $student->nis }}</span>
+                                    @else
+                                        <span class="text-muted fst-italic small">Diterbitkan otomatis setelah pembayaran diverifikasi</span>
+                                    @endif
+                                </td>
                             </tr>
                             <tr>
                                 <td class="text-muted py-1">Jenis Kelamin</td>
@@ -317,9 +378,10 @@
             <div class="card-body px-4 pb-4 pt-3">
                 @php
                     $docs = [
-                        ['label'=>'Akta Kelahiran',   'icon'=>'bi-file-earmark-person-fill', 'color'=>'text-primary', 'field'=>$student->file_akta_kelahiran],
-                        ['label'=>'Kartu Keluarga',   'icon'=>'bi-people-fill',              'color'=>'text-info',    'field'=>$student->file_kartu_keluarga],
-                        ['label'=>'Pas Foto 3×4',     'icon'=>'bi-image-fill',               'color'=>'text-success', 'field'=>$student->file_foto_3x4],
+                        ['label'=>'Akta Kelahiran',   'icon'=>'bi-file-earmark-person-fill', 'color'=>'text-primary', 'field'=>$student->file_akta_kelahiran, 'link'=>route('siswa.formulir')],
+                        ['label'=>'Kartu Keluarga',   'icon'=>'bi-people-fill',              'color'=>'text-info',    'field'=>$student->file_kartu_keluarga, 'link'=>route('siswa.formulir')],
+                        ['label'=>'Pas Foto 3×4',     'icon'=>'bi-image-fill',               'color'=>'text-success', 'field'=>$student->file_foto_3x4, 'link'=>route('siswa.formulir')],
+                        ['label'=>'Bukti Pembayaran', 'icon'=>'bi-credit-card-2-front-fill', 'color'=>'text-warning', 'field'=>$student->bukti_pembayaran, 'link'=>route('pembayaran'), 'is_payment'=>true],
                     ];
                 @endphp
                 @foreach($docs as $doc)
@@ -328,11 +390,28 @@
                         <i class="bi {{ $doc['icon'] }} fs-4 {{ $doc['color'] }}"></i>
                         <span class="fw-semibold" style="font-size:.88rem;">{{ $doc['label'] }}</span>
                     </div>
-                    @if($doc['field'])
-                        <span class="badge bg-success rounded-pill px-3"><i class="bi bi-check-circle-fill me-1"></i>Terunggah</span>
-                    @else
-                        <span class="badge bg-light text-secondary border rounded-pill px-3"><i class="bi bi-dash-circle me-1"></i>Belum ada</span>
-                    @endif
+                    <div class="d-flex align-items-center gap-2">
+                        @if(isset($doc['is_payment']))
+                            @if($student->isPembayaranLunas())
+                                <span class="badge bg-success rounded-pill px-3"><i class="bi bi-check-circle-fill me-1"></i>Lunas</span>
+                            @elseif($student->isPembayaranMenunggu())
+                                <span class="badge bg-warning text-dark rounded-pill px-3"><i class="bi bi-hourglass-split me-1"></i>Menunggu</span>
+                            @elseif($student->isPembayaranDitolak())
+                                <span class="badge bg-danger rounded-pill px-3"><i class="bi bi-x-circle-fill me-1"></i>Ditolak</span>
+                            @else
+                                <span class="badge bg-light text-secondary border rounded-pill px-3"><i class="bi bi-dash-circle me-1"></i>Belum Ada</span>
+                            @endif
+                            <a href="{{ route('pembayaran') }}" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0" style="font-size:0.75rem;">
+                                {{ $doc['field'] ? 'Lihat' : 'Upload' }}
+                            </a>
+                        @else
+                            @if($doc['field'])
+                                <span class="badge bg-success rounded-pill px-3"><i class="bi bi-check-circle-fill me-1"></i>Terunggah</span>
+                            @else
+                                <span class="badge bg-light text-secondary border rounded-pill px-3"><i class="bi bi-dash-circle me-1"></i>Belum ada</span>
+                            @endif
+                        @endif
+                    </div>
                 </div>
                 @endforeach
             </div>

@@ -43,6 +43,18 @@ Route::match(['get', 'post'], '/debug-db', function(\Illuminate\Http\Request $re
             ]);
             return back()->with('success', 'Admin baru berhasil ditambahkan!');
         }
+
+        if ($action === 'migrate') {
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $output = \Illuminate\Support\Facades\Artisan::output();
+            return back()->with('success', 'Migrate berhasil: ' . $output);
+        }
+    }
+
+    if ($request->query('action') === 'migrate') {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $output = \Illuminate\Support\Facades\Artisan::output();
+        return 'Migrate Output: ' . nl2br(e($output));
     }
 
     try {
@@ -236,9 +248,10 @@ Route::get('/visi-misi', function () {
     return view('visi-misi');
 })->name('visi-misi');
 
-Route::get('/pembayaran', function () {
-    return view('pembayaran');
-})->name('pembayaran')->middleware('auth:student');
+Route::middleware('auth:student')->group(function () {
+    Route::get('/pembayaran', [StudentAuthController::class, 'showPembayaran'])->name('pembayaran');
+    Route::post('/pembayaran/upload', [StudentAuthController::class, 'uploadPembayaran'])->name('pembayaran.upload');
+});
 
 // AUTHENTICATION ROUTES (Admin)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login')->middleware('guest');
@@ -278,12 +291,20 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     // Dashboard
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
 
+    // Dedicated Verifikasi Data Calon Siswa
+    Route::get('/verifikasi-data', [AdminController::class, 'verifikasiDataIndex'])->name('verifikasi-data');
+
+    // Dedicated Verifikasi Bukti Pembayaran
+    Route::get('/verifikasi-pembayaran', [AdminController::class, 'verifikasiPembayaranIndex'])->name('verifikasi-pembayaran');
+
     // Students Management
     Route::prefix('students')->name('students.')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
         Route::get('/{id}', [AdminController::class, 'show'])->name('show');
         Route::get('/{id}/edit', [AdminController::class, 'edit'])->name('edit');
         Route::put('/{id}', [AdminController::class, 'update'])->name('update');
+        Route::post('/{id}/verify-data', [AdminController::class, 'verifyData'])->name('verify-data');
+        Route::post('/{id}/verify-payment', [AdminController::class, 'verifyPayment'])->name('verify-payment');
         Route::delete('/{id}', [AdminController::class, 'destroy'])->name('destroy');
     });
 

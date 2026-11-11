@@ -263,8 +263,23 @@
                     @elseif(Auth::guard('web')->check())
                         <!-- Admin Terautentikasi -->
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
-                                <i class="bi bi-shield-lock me-1"></i> Admin Dashboard
+                            <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
+                                <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.verifikasi-data') ? 'active' : '' }}" href="{{ route('admin.verifikasi-data') }}">
+                                <i class="bi bi-person-check me-1"></i> Verifikasi Data
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.verifikasi-pembayaran') ? 'active' : '' }}" href="{{ route('admin.verifikasi-pembayaran') }}">
+                                <i class="bi bi-credit-card-2-front me-1"></i> Verifikasi Pembayaran
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.students.index') ? 'active' : '' }}" href="{{ route('admin.students.index') }}">
+                                <i class="bi bi-people me-1"></i> Data Pendaftar
                             </a>
                         </li>
                         <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
